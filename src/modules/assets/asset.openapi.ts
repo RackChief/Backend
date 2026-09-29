@@ -19,7 +19,7 @@ export function registerAssetOpenApi(
 
     registry.registerPath({
         method: "get",
-        path: "/api/assets",
+        path: "/api/v1/assets",
         tags: ["Assets"],
         summary: "List all assets",
         security: [
@@ -44,7 +44,7 @@ export function registerAssetOpenApi(
 
     registry.registerPath({
         method: "get",
-        path: "/api/assets/{id}",
+        path: "/api/v1/assets/{id}",
         tags: ["Assets"],
         summary: "Get an asset by ID",
         security: [
@@ -77,7 +77,7 @@ export function registerAssetOpenApi(
 
     registry.registerPath({
         method: "post",
-        path: "/api/assets",
+        path: "/api/v1/assets",
         tags: ["Assets"],
         summary: "Create an asset",
         security: [
@@ -115,7 +115,7 @@ export function registerAssetOpenApi(
 
     registry.registerPath({
         method: "patch",
-        path: "/api/assets/{id}",
+        path: "/api/v1/assets/{id}",
         tags: ["Assets"],
         summary: "Update an asset",
         security: [
@@ -159,7 +159,7 @@ export function registerAssetOpenApi(
 
     registry.registerPath({
         method: "post",
-        path: "/api/assets/{id}/archive",
+        path: "/api/v1/assets/{id}/archive",
         tags: ["Assets"],
         summary: "Archive an asset",
         security: [
@@ -192,7 +192,7 @@ export function registerAssetOpenApi(
 
     registry.registerPath({
         method: "post",
-        path: "/api/assets/{id}/restore",
+        path: "/api/v1/assets/{id}/restore",
         tags: ["Assets"],
         summary: "Restore an archived asset",
         security: [
@@ -225,7 +225,7 @@ export function registerAssetOpenApi(
 
     registry.registerPath({
         method: "delete",
-        path: "/api/assets/{id}",
+        path: "/api/v1/assets/{id}",
         tags: ["Assets"],
         summary: "Permanently delete an archived asset",
         security: [

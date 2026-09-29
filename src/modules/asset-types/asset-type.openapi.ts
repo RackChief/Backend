@@ -18,7 +18,7 @@ export function registerAssetTypeOpenApi(
 
     registry.registerPath({
         method: "get",
-        path: "/api/asset-types",
+        path: "/api/v1/asset-types",
         tags: ["Asset Types"],
         summary: "List all asset types",
         security: [
@@ -43,7 +43,7 @@ export function registerAssetTypeOpenApi(
 
     registry.registerPath({
         method: "get",
-        path: "/api/asset-types/{id}",
+        path: "/api/v1/asset-types/{id}",
         tags: ["Asset Types"],
         summary: "Get an asset type by ID",
         security: [

@@ -33,17 +33,17 @@ app.use(
 );
 
 app.use(
-    "/api/assets",
+    "/api/v1/assets",
     requireAuth,
     assetRouter,
 );
 
 app.use(
-    "/api/asset-types",
+    "/api/v1/asset-types",
     requireAuth,
     assetTypeRouter,
 );
 
-app.use("/api/projects", requireAuth, projectRouter);
+app.use("/api/v1/projects", requireAuth, projectRouter);
 
 app.use(errorHandler);

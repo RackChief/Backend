@@ -57,7 +57,7 @@ export const openApiDocument =
     generator.generateDocument({
         openapi: "3.0.3",
         info: {
-            title: "RackChief API",
+            title: "RackChief API v1",
             version: "1.0.0",
             description:
                 "Backend API for RackChief homelab inventory and project planning.",
