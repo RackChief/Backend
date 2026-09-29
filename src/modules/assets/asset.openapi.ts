@@ -15,6 +15,7 @@ export function registerAssetOpenApi(
 ) {
     registry.register("Asset", assetSchema);
     registry.register("CreateAsset", createAssetSchema);
+    registry.register("UpdateAsset", updateAssetSchema);
 
     registry.registerPath({
         method: "get",
@@ -108,6 +109,148 @@ export function registerAssetOpenApi(
             },
             401: {
                 description: "Authentication required",
+            },
+        },
+    });
+
+    registry.registerPath({
+        method: "patch",
+        path: "/api/assets/{id}",
+        tags: ["Assets"],
+        summary: "Update an asset",
+        security: [
+            {
+                bearerAuth: [],
+            },
+        ],
+        request: {
+            params: z.object({
+                id: z.uuid(),
+            }),
+            body: {
+                required: true,
+                content: {
+                    "application/json": {
+                        schema: updateAssetSchema,
+                    },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: "Asset updated",
+                content: {
+                    "application/json": {
+                        schema: assetSchema,
+                    },
+                },
+            },
+            400: {
+                description: "Invalid request",
+            },
+            401: {
+                description: "Authentication required",
+            },
+            404: {
+                description: "Asset not found",
+            },
+        },
+    });
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/assets/{id}/archive",
+        tags: ["Assets"],
+        summary: "Archive an asset",
+        security: [
+            {
+                bearerAuth: [],
+            },
+        ],
+        request: {
+            params: z.object({
+                id: z.uuid(),
+            }),
+        },
+        responses: {
+            200: {
+                description: "Asset archived",
+                content: {
+                    "application/json": {
+                        schema: assetSchema,
+                    },
+                },
+            },
+            401: {
+                description: "Authentication required",
+            },
+            404: {
+                description: "Asset not found",
+            },
+        },
+    });
+
+    registry.registerPath({
+        method: "post",
+        path: "/api/assets/{id}/restore",
+        tags: ["Assets"],
+        summary: "Restore an archived asset",
+        security: [
+            {
+                bearerAuth: [],
+            },
+        ],
+        request: {
+            params: z.object({
+                id: z.uuid(),
+            }),
+        },
+        responses: {
+            200: {
+                description: "Asset restored",
+                content: {
+                    "application/json": {
+                        schema: assetSchema,
+                    },
+                },
+            },
+            401: {
+                description: "Authentication required",
+            },
+            404: {
+                description: "Asset not found",
+            },
+        },
+    });
+
+    registry.registerPath({
+        method: "delete",
+        path: "/api/assets/{id}",
+        tags: ["Assets"],
+        summary: "Permanently delete an archived asset",
+        security: [
+            {
+                bearerAuth: [],
+            },
+        ],
+        request: {
+            params: z.object({
+                id: z.uuid(),
+            }),
+        },
+        responses: {
+            204: {
+                description: "Asset permanently deleted",
+            },
+            401: {
+                description: "Authentication required",
+            },
+            404: {
+                description: "Asset not found",
+            },
+            409: {
+                description:
+                    "Asset must be archived before permanent deletion",
             },
         },
     });
