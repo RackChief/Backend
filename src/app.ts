@@ -16,6 +16,7 @@ import { assetTypeRouter } from "./modules/asset-types/asset-type.routes.js";
 import { projectRouter } from "./modules/projects/project.routes.js";
 import { mcpSettingsRouter, mcpTokenRouter } from "./modules/mcp-admin/mcp-admin.routes.js";
 import { mcpAdminService } from "./modules/mcp-admin/mcp-admin.service.js";
+import { deviceImageRouter } from "./modules/device-images/device-image.routes.js";
 
 export const app = express();
 
@@ -44,6 +45,8 @@ app.use(
     requireAuth,
     assetRouter,
 );
+
+app.use("/api/v1/device-images", deviceImageRouter);
 
 app.use(
     "/api/v1/asset-types",
