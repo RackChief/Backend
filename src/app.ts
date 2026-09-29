@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 
+import { requireAuth } from "./auth/middleware.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { assetRouter } from "./modules/assets/asset.routes.js";
 
@@ -17,6 +18,10 @@ app.get("/health", (_req, res) => {
     });
 });
 
-app.use("/api/assets", assetRouter);
+app.use(
+    "/api/assets",
+    requireAuth,
+    assetRouter,
+);
 
 app.use(errorHandler);
