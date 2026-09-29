@@ -15,6 +15,13 @@
       "when": 1790698783336,
       "tag": "0001_windy_gorgon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790700379632,
+      "tag": "0002_oval_living_lightning",
+      "breakpoints": true
     }
   ]
 }

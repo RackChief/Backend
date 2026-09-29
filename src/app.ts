@@ -8,6 +8,8 @@ import { errorHandler } from "./middleware/error-handler.js";
 import { assetRouter } from "./modules/assets/asset.routes.js";
 import { openApiDocument } from "./openapi/index.js";
 import { assetTypeRouter } from "./modules/asset-types/asset-type.routes.js";
+import { projectRouter } from "./modules/projects/project.routes.js";
+
 export const app = express();
 
 app.use(helmet());
@@ -41,5 +43,7 @@ app.use(
     requireAuth,
     assetTypeRouter,
 );
+
+app.use("/api/projects", requireAuth, projectRouter);
 
 app.use(errorHandler);

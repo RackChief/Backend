@@ -12,6 +12,7 @@ import {
 import {
     registerAssetTypeOpenApi,
 } from "../modules/asset-types/asset-type.openapi.js";
+import { registerProjectOpenApi } from "../modules/projects/project.openapi.js";
 
 const registry = new OpenAPIRegistry();
 
@@ -46,6 +47,7 @@ registry.registerPath({
 
 registerAssetOpenApi(registry);
 registerAssetTypeOpenApi(registry);
+registerProjectOpenApi(registry);
 
 const generator = new OpenApiGeneratorV3(
     registry.definitions,

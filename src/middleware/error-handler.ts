@@ -1,6 +1,7 @@
 import type {
     ErrorRequestHandler,
 } from "express";
+import { ZodError } from "zod";
 
 export const errorHandler: ErrorRequestHandler = (
     error,
@@ -8,6 +9,14 @@ export const errorHandler: ErrorRequestHandler = (
     res,
     _next,
 ) => {
+    if (error instanceof ZodError) {
+        res.status(400).json({
+            error: "Invalid request",
+            issues: error.issues,
+        });
+        return;
+    }
+
     console.error(error);
 
     res.status(error.statusCode ?? 500).json({
