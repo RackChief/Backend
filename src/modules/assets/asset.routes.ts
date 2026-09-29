@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { z } from "zod";
 
 import { assetService } from "./asset.service.js";
+import { createAssetSchema } from "./asset.schema.js";
 
 export const assetRouter = Router();
 
@@ -23,12 +23,6 @@ assetRouter.get("/:id", async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-});
-
-const createAssetSchema = z.object({
-    name: z.string().min(1),
-    hostname: z.string().optional(),
-    notes: z.string().optional(),
 });
 
 assetRouter.post("/", async (req, res, next) => {

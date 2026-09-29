@@ -1,10 +1,12 @@
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
 
 import { requireAuth } from "./auth/middleware.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { assetRouter } from "./modules/assets/asset.routes.js";
+import { openApiDocument } from "./openapi/index.js";
 
 export const app = express();
 
@@ -17,6 +19,16 @@ app.get("/health", (_req, res) => {
         status: "ok",
     });
 });
+
+app.get("/openapi.json", (_req, res) => {
+    res.json(openApiDocument);
+});
+
+app.use(
+    "/docs",
+    swaggerUi.serve,
+    swaggerUi.setup(openApiDocument),
+);
 
 app.use(
     "/api/assets",
