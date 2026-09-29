@@ -15,14 +15,14 @@ deviceImageRouter.get("/:assetId/urls", requireAuth, async (req, res) => {
     res.json(signedImageUrls(assetId));
 });
 
-deviceImageRouter.get("/:assetId/:side", async (req, res) => {
+deviceImageRouter.get("/:assetId/:side/:expires/:nonce/:signature", async (req, res) => {
     const { assetId, side } = params.parse(req.params);
-    const query = z.object({ expires: z.coerce.number().int(), signature: z.string() }).parse(req.query);
-    if (!validImageSignature(assetId, side, query.expires, query.signature)) { res.status(401).json({ error: "Invalid or expired image URL" }); return; }
+    const signed = z.object({ expires: z.coerce.number().int(), nonce: z.string(), signature: z.string() }).parse(req.params);
+    if (!validImageSignature(assetId, side, signed.expires, signed.nonce, signed.signature)) { res.status(401).json({ error: "Invalid or expired image URL" }); return; }
     const asset = await assetService.get(assetId);
     const image = await deviceImageService.resolve(asset, side);
     if (!image) { res.status(404).json({ error: "No device image available" }); return; }
-    res.set({ "Content-Type": image.contentType, "Cache-Control": image.source === "custom" ? "private, max-age=60" : "public, max-age=86400", "X-Device-Image-Source": image.source });
+    res.set({ "Content-Type": image.contentType, "Cache-Control": "private, max-age=60", "X-Device-Image-Source": image.source });
     res.send(image.bytes);
 });
 
