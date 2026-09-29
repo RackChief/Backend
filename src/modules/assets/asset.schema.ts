@@ -8,10 +8,18 @@ export const assetStatusSchema = z.enum([
     "archived",
 ]);
 
+export const assetTypeSummarySchema = z.object({
+    id: z.uuid(),
+    name: z.string(),
+    slug: z.string(),
+});
+
 export const assetSchema = z.object({
     id: z.uuid(),
 
     assetTypeId: z.uuid(),
+
+    assetType: assetTypeSummarySchema,
 
     name: z.string(),
     status: assetStatusSchema,
@@ -46,4 +54,23 @@ export const createAssetSchema = z.object({
     serialNumber: z.string().optional(),
 
     notes: z.string().optional(),
+});
+
+export const updateAssetSchema = z.object({
+    name: z.string().min(1).optional(),
+
+    assetTypeId: z.uuid().optional(),
+
+    status: assetStatusSchema
+        .exclude(["archived"])
+        .optional(),
+
+    hostname: z.string().nullable().optional(),
+    ipAddress: z.string().nullable().optional(),
+
+    manufacturer: z.string().nullable().optional(),
+    model: z.string().nullable().optional(),
+    serialNumber: z.string().nullable().optional(),
+
+    notes: z.string().nullable().optional(),
 });

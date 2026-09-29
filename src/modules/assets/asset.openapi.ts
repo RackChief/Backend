@@ -7,6 +7,7 @@ import { z } from "../../openapi/zod.js";
 import {
     assetSchema,
     createAssetSchema,
+    updateAssetSchema,
 } from "./asset.schema.js";
 
 export function registerAssetOpenApi(
