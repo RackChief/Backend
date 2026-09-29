@@ -8,9 +8,13 @@ type ImageFile = { bytes: Buffer; contentType: string; source: "custom" | "netbo
 const root = process.env.DEVICE_IMAGE_DIR || "/data/device-images";
 const maxBytes = 5 * 1024 * 1024;
 const missingTtlMs = 24 * 60 * 60 * 1000;
+const lookupBudgetMs = 10000;
+const requestTimeoutMs = 2500;
+const unavailableTtlMs = 5 * 60 * 1000;
 const extensions = ["png", "jpg", "jpeg", "webp"] as const;
 const mime: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" };
 const pending = new Map<string, Promise<ImageFile | null>>();
+const unavailableUntil = new Map<string, number>();
 
 function slug(value: string) {
     return value.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100);
@@ -58,15 +62,21 @@ async function fetchDefault(manufacturer: string, model: string, side: ImageSide
     const prefix = `${vendor}-${modelKey}.${side}`;
     const cached = await findImage(directory, prefix, "netbox");
     if (cached) return cached;
+    const retryAt = unavailableUntil.get(prefix);
+    if (retryAt && retryAt > Date.now()) return null;
+    unavailableUntil.delete(prefix);
     const missing = join(directory, `${prefix}.missing`);
     try { if (Date.now() - (await stat(missing)).mtimeMs < missingTtlMs) return null; } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
     let lookupUnavailable = false;
-    for (const folder of manufacturerFolders(manufacturer)) {
+    const deadline = Date.now() + lookupBudgetMs;
+    lookup: for (const folder of manufacturerFolders(manufacturer)) {
         for (const imageSlug of modelSlugs(manufacturer, model)) {
             for (const ext of extensions) {
+                const remainingMs = deadline - Date.now();
+                if (remainingMs <= 0) { lookupUnavailable = true; break lookup; }
                 const url = `https://raw.githubusercontent.com/netbox-community/devicetype-library/master/elevation-images/${encodeURIComponent(folder)}/${encodeURIComponent(imageSlug)}.${side}.${ext}`;
                 let response: Response;
-                try { response = await fetch(url, { headers: { "User-Agent": "RackChief-device-images" }, signal: AbortSignal.timeout(5000), redirect: "error" }); }
+                try { response = await fetch(url, { headers: { "User-Agent": "RackChief-device-images" }, signal: AbortSignal.timeout(Math.min(requestTimeoutMs, remainingMs)), redirect: "error" }); }
                 catch { lookupUnavailable = true; continue; }
                 if (response.status === 404) continue;
                 if (!response.ok) { lookupUnavailable = true; continue; }
@@ -82,11 +92,18 @@ async function fetchDefault(manufacturer: string, model: string, side: ImageSide
                 await writeFile(temporary, bytes);
                 await rename(temporary, target);
                 await rm(missing, { force: true });
+                unavailableUntil.delete(prefix);
                 return { bytes, contentType: mime[actual], source: "netbox" };
             }
         }
     }
-    if (!lookupUnavailable) { await mkdir(directory, { recursive: true }); await writeFile(missing, ""); }
+    if (lookupUnavailable) {
+        const now = Date.now();
+        for (const [key, expires] of unavailableUntil) if (expires <= now) unavailableUntil.delete(key);
+        if (unavailableUntil.size >= 512) unavailableUntil.delete(unavailableUntil.keys().next().value!);
+        unavailableUntil.set(prefix, now + unavailableTtlMs);
+    }
+    else { await mkdir(directory, { recursive: true }); await writeFile(missing, ""); }
     return null;
 }
 
@@ -123,7 +140,8 @@ export const deviceImageService = {
     async customSides(assetId: string) {
         try {
             const names = await readdir(join(root, "custom"));
-            return { front: names.some(name => name.startsWith(`${assetId}.front.`)), rear: names.some(name => name.startsWith(`${assetId}.rear.`)) };
+            const available = (side: ImageSide) => extensions.some(ext => names.includes(`${assetId}.${side}.${ext}`));
+            return { front: available("front"), rear: available("rear") };
         } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return { front: false, rear: false }; throw error; }
     },
 };

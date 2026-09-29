@@ -4,6 +4,7 @@ import type {
 
 import { assetRepository } from "./asset.repository.js";
 import { locationService } from "../locations/location.service.js";
+import { deviceImageService } from "../device-images/device-image.service.js";
 
 function notFound() {
     const error = new Error("Asset not found");
@@ -97,5 +98,12 @@ export const assetService = {
         }
 
         await assetRepository.delete(id);
+        const cleanup = await Promise.allSettled([
+            deviceImageService.deleteCustom(id, "front"),
+            deviceImageService.deleteCustom(id, "rear"),
+        ]);
+        for (const result of cleanup) {
+            if (result.status === "rejected") console.warn("Could not remove a deleted asset's custom image", result.reason);
+        }
     },
 };
