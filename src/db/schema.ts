@@ -1,8 +1,12 @@
 import {
+    boolean,
+    index,
+    inet,
     pgEnum,
     pgTable,
     text,
     timestamp,
+    uniqueIndex,
     uuid,
 } from "drizzle-orm/pg-core";
 
@@ -14,31 +18,96 @@ export const assetStatus = pgEnum("asset_status", [
     "archived",
 ]);
 
-export const assets = pgTable("assets", {
-    id: uuid("id").primaryKey().defaultRandom(),
+export const assetTypes = pgTable(
+    "asset_types",
+    {
+        id: uuid("id")
+            .primaryKey()
+            .defaultRandom(),
 
-    name: text("name").notNull(),
+        name: text("name")
+            .notNull(),
 
-    status: assetStatus("status")
-        .notNull()
-        .default("active"),
+        slug: text("slug")
+            .notNull(),
 
-    hostname: text("hostname"),
+        description: text("description"),
 
-    notes: text("notes"),
+        builtIn: boolean("built_in")
+            .notNull()
+            .default(false),
 
-    createdAt: timestamp("created_at", {
-        withTimezone: true,
-    })
-        .notNull()
-        .defaultNow(),
+        createdAt: timestamp("created_at", {
+            withTimezone: true,
+        })
+            .notNull()
+            .defaultNow(),
 
-    updatedAt: timestamp("updated_at", {
-        withTimezone: true,
-    })
-        .notNull()
-        .defaultNow(),
-});
+        updatedAt: timestamp("updated_at", {
+            withTimezone: true,
+        })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        uniqueIndex("asset_types_slug_idx").on(table.slug),
+    ],
+);
+
+export const assets = pgTable(
+    "assets",
+    {
+        id: uuid("id")
+            .primaryKey()
+            .defaultRandom(),
+
+        assetTypeId: uuid("asset_type_id")
+            .notNull()
+            .references(() => assetTypes.id, {
+                onDelete: "restrict",
+            }),
+
+        name: text("name")
+            .notNull(),
+
+        status: assetStatus("status")
+            .notNull()
+            .default("active"),
+
+        hostname: text("hostname"),
+
+        ipAddress: inet("ip_address"),
+
+        manufacturer: text("manufacturer"),
+        model: text("model"),
+        serialNumber: text("serial_number"),
+
+        notes: text("notes"),
+
+        archivedAt: timestamp("archived_at", {
+            withTimezone: true,
+        }),
+
+        createdAt: timestamp("created_at", {
+            withTimezone: true,
+        })
+            .notNull()
+            .defaultNow(),
+
+        updatedAt: timestamp("updated_at", {
+            withTimezone: true,
+        })
+            .notNull()
+            .defaultNow(),
+    },
+    (table) => [
+        index("assets_asset_type_idx").on(table.assetTypeId),
+        index("assets_status_idx").on(table.status),
+    ],
+);
+
+export type AssetType = typeof assetTypes.$inferSelect;
+export type NewAssetType = typeof assetTypes.$inferInsert;
 
 export type Asset = typeof assets.$inferSelect;
 export type NewAsset = typeof assets.$inferInsert;
