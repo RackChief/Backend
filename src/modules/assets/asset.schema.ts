@@ -1,4 +1,5 @@
 import { z } from "../../openapi/zod.js";
+import { ipSchema } from "../networking/network.schema.js";
 
 export const assetStatusSchema = z.enum([
     "planned",
@@ -49,7 +50,7 @@ export const createAssetSchema = z.object({
 
     locationId: z.uuid().nullable().optional(),
     hostname: z.string().optional(),
-    ipAddress: z.string().optional(),
+    ipAddress: ipSchema.optional(),
 
     manufacturer: z.string().optional(),
     model: z.string().optional(),
@@ -69,7 +70,7 @@ export const updateAssetSchema = z.object({
 
     locationId: z.uuid().nullable().optional(),
     hostname: z.string().nullable().optional(),
-    ipAddress: z.string().nullable().optional(),
+    ipAddress: ipSchema.nullable().optional(),
 
     manufacturer: z.string().nullable().optional(),
     model: z.string().nullable().optional(),
