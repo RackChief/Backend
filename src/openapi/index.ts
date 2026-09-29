@@ -12,6 +12,7 @@ import {
 import {
     registerAssetTypeOpenApi,
 } from "../modules/asset-types/asset-type.openapi.js";
+import { registerMcpAdminOpenApi } from "../modules/mcp-admin/mcp-admin.openapi.js";
 import { registerProjectOpenApi } from "../modules/projects/project.openapi.js";
 
 const registry = new OpenAPIRegistry();
@@ -48,6 +49,7 @@ registry.registerPath({
 registerAssetOpenApi(registry);
 registerAssetTypeOpenApi(registry);
 registerProjectOpenApi(registry);
+registerMcpAdminOpenApi(registry);
 
 const generator = new OpenApiGeneratorV3(
     registry.definitions,

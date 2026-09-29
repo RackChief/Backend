@@ -22,6 +22,13 @@
       "when": 1790700379632,
       "tag": "0002_oval_living_lightning",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790704777155,
+      "tag": "0003_bright_white_queen",
+      "breakpoints": true
     }
   ]
 }

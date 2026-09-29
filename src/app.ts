@@ -9,6 +9,8 @@ import { assetRouter } from "./modules/assets/asset.routes.js";
 import { openApiDocument } from "./openapi/index.js";
 import { assetTypeRouter } from "./modules/asset-types/asset-type.routes.js";
 import { projectRouter } from "./modules/projects/project.routes.js";
+import { mcpSettingsRouter, mcpTokenRouter } from "./modules/mcp-admin/mcp-admin.routes.js";
+import { mcpAdminService } from "./modules/mcp-admin/mcp-admin.service.js";
 
 export const app = express();
 
@@ -45,5 +47,27 @@ app.use(
 );
 
 app.use("/api/v1/projects", requireAuth, projectRouter);
+
+app.use("/api/v1/settings/mcp", requireAuth, mcpSettingsRouter);
+app.use("/api/v1/mcp-tokens", requireAuth, mcpTokenRouter);
+
+app.all("/mcp", async (req, res, next) => {
+    try {
+        if (!(await mcpAdminService.settings()).enabled) {
+            res.status(404).json({ error: "Not found" });
+            return;
+        }
+        const match = /^Bearer (\S+)$/i.exec(req.headers.authorization ?? "");
+        if (!match || !await mcpAdminService.authenticate(match[1])) {
+            res.status(401).json({ error: "Invalid or missing MCP token" });
+            return;
+        }
+        const { mcpNodeHandler } = await import("./mcp/server.js");
+        await mcpNodeHandler(req, res, req.body);
+    } catch (error) {
+        console.error("MCP request failed", error instanceof Error ? error.name : "unknown");
+        if (!res.headersSent) res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 app.use(errorHandler);
