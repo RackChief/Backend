@@ -1,16 +1,15 @@
 import {
-    extendZodWithOpenApi,
     OpenAPIRegistry,
     OpenApiGeneratorV3,
 } from "@asteasolutions/zod-to-openapi";
-import { z } from "zod";
+import { z } from "./zod.js";
 
 import {
     assetSchema,
     createAssetSchema,
 } from "../modules/assets/asset.schema.js";
 
-extendZodWithOpenApi(z);
+
 
 const registry = new OpenAPIRegistry();
 

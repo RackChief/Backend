@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../../openapi/zod.js";
 
 export const assetStatusSchema = z.enum([
     "planned",

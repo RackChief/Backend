@@ -56,3 +56,4 @@ Thumbs.db
 .npm/
 .yarn/cache/
 .pnp.*
+.supabase-session.json
