@@ -1,0 +1,15 @@
+import { Router } from "express";
+import { z } from "../../openapi/zod.js";
+import { createRackSchema, updateRackSchema, createPlacementSchema, updatePlacementSchema } from "./rack.schema.js";
+import { rackService } from "./rack.service.js";
+export const rackRouter = Router();
+const id = (value: string | undefined) => z.uuid().parse(value);
+rackRouter.get("/", async (_req, res) => { res.json(await rackService.list()); });
+rackRouter.get("/:id", async (req, res) => { res.json(await rackService.get(id(req.params.id))); });
+rackRouter.post("/", async (req, res) => { res.status(201).json(await rackService.create(createRackSchema.parse(req.body))); });
+rackRouter.patch("/:id", async (req, res) => { res.json(await rackService.update(id(req.params.id), updateRackSchema.parse(req.body))); });
+rackRouter.delete("/:id", async (req, res) => { await rackService.delete(id(req.params.id)); res.status(204).send(); });
+rackRouter.get("/:rackId/placements", async (req, res) => { res.json(await rackService.placements(id(req.params.rackId))); });
+rackRouter.post("/:rackId/placements", async (req, res) => { res.status(201).json(await rackService.place(id(req.params.rackId), createPlacementSchema.parse(req.body))); });
+rackRouter.patch("/:rackId/placements/:placementId", async (req, res) => { res.json(await rackService.updatePlacement(id(req.params.rackId), id(req.params.placementId), updatePlacementSchema.parse(req.body))); });
+rackRouter.delete("/:rackId/placements/:placementId", async (req, res) => { await rackService.remove(id(req.params.rackId), id(req.params.placementId)); res.status(204).send(); });

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { assetDetailService } from "./asset-detail.service.js";
 
 import {
     createAssetSchema,
@@ -23,6 +24,8 @@ assetRouter.get(
         }
     },
 );
+
+assetRouter.get("/:id/detail", async (req, res) => { res.json(await assetDetailService.get(req.params.id)); });
 
 assetRouter.get(
     "/:id",

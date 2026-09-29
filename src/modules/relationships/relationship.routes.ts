@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { z } from "../../openapi/zod.js";
+import { createRelationshipSchema, updateRelationshipSchema } from "./relationship.schema.js";
+import { relationshipService as service } from "./relationship.service.js";
+const id = (value: string | undefined) => z.uuid().parse(value);
+export const relationshipRouter = Router();
+relationshipRouter.get("/", async (req, res) => { const query = z.object({ assetId: z.uuid().optional() }).strict().parse(req.query); res.json(await service.list(query.assetId)); });
+relationshipRouter.get("/:id", async (req, res) => { res.json(await service.get(id(req.params.id))); });
+relationshipRouter.post("/", async (req, res) => { res.status(201).json(await service.create(createRelationshipSchema.parse(req.body))); });
+relationshipRouter.patch("/:id", async (req, res) => { res.json(await service.update(id(req.params.id), updateRelationshipSchema.parse(req.body))); });
+relationshipRouter.delete("/:id", async (req, res) => { await service.delete(id(req.params.id)); res.status(204).send(); });

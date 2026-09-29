@@ -1,23 +1,87 @@
 # RackChief Backend
 
-RackChief's Express API serves the V1 REST routes and the optional MCP endpoint in the same process and Docker image.
+RackChief is a homelab inventory and planning API. It records assets, installed and spare hardware, physical locations and racks, network interfaces and ports, IP addresses, physical connections, asset relationships, and projects. It uses Express 5, TypeScript, Drizzle ORM, a hosted PostgreSQL database, and Supabase Auth.
+
+## Requirements and setup
+
+- Node.js with npm (use the version supported by the checked-in dependencies)
+- Access to the configured Supabase PostgreSQL development database
+- A Supabase project for authentication
+
+Create a local `.env` in `Backend/` with these variables. Do not commit it.
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection used by Drizzle and migrations |
+| `SUPABASE_URL` | Supabase Auth project URL |
+| `SUPABASE_PUBLISHABLE_KEY` | JWT validation and development sign-in |
+| `SUPABASE_SECRET_KEY` | Required by the current backend environment configuration |
+| `PORT` | HTTP port; defaults to `3000` |
+| `SUPABASE_TEST_EMAIL`, `SUPABASE_TEST_PASSWORD` | Optional credentials for `npm run auth:token` during development |
+
+The configured development Supabase database is disposable. Use it for migrations and verification; this repository does not require another PostgreSQL instance. From `Backend/`:
+
+```bash
+npm install
+npm run db:migrate
+npm run build
+npm run dev
+```
+
+For schema changes, edit `src/db/schema/`, run `npm run db:generate`, inspect the new SQL in `drizzle/`, then run `npm run db:migrate`. Keep previous migrations intact.
+
+## HTTP API
+
+REST endpoints live under `/api/v1` and require a Supabase bearer JWT. `GET /health`, `GET /openapi.json`, and the Swagger UI at `/docs` are public. OpenAPI is generated from per-module Zod registrations.
+
+The main API resources are:
+
+- `/assets`, `/asset-types`, `/components`, `/component-types`, `/locations`, `/racks`
+- `/network-interfaces`, `/network-ports`, `/network-connections`, `/ip-addresses`, `/asset-relationships`
+- `/projects`, `/settings/mcp`, `/mcp-tokens`
+
+`GET /api/v1/assets` stays lightweight. `GET /api/v1/assets/{id}/detail` includes the asset's location, rack placement, components, interfaces and their IP addresses, ports, and direct relationships. Rack detail includes placement rows with asset summaries. Assets can exist without locations or rack placements, and components can exist without an asset as spares.
+
+`assets.ipAddress` remains a legacy convenience field. Interface IP addresses are managed separately; neither field automatically updates the other. Full subnet and VLAN management is outside V1.
+
+For development authentication, `npm run --silent auth:token` obtains a JWT using the optional test credentials. Do not print, save in source, or commit tokens.
+
+## Domain model
+
+```text
+Locations
+├── Assets
+│   ├── Components
+│   ├── Rack Placements → Racks
+│   ├── Network Interfaces → IP Addresses
+│   ├── Network Ports → Network Connections
+│   └── Asset Relationships → Assets
+└── Racks
+
+Projects
+├── Assets
+├── Work and purchase items
+└── Updates
+```
+
+Component types include seeded built-in categories and can be extended through `POST /api/v1/component-types`. Hardware-specific component details belong in the `attributes` JSON object. A network port can optionally reference an interface on the same asset. Each port can have one physical connection, and each interface can have one primary IP address.
 
 ## MCP
 
-The MCP Streamable HTTP endpoint is always `/mcp`. It is disabled by default: if `mcp.enabled` is absent or false in `app_settings`, `/mcp` returns 404. Changing the setting takes effect on the next request without restarting the backend. `/mcp` is a protocol endpoint and is not part of the REST OpenAPI document.
+The Streamable HTTP endpoint is `/mcp`. It is disabled by default and returns 404 until an authenticated user sets `PATCH /api/v1/settings/mcp` to `{ "enabled": true }`. The MCP endpoint requires a separate RackChief MCP bearer token; Supabase JWTs manage settings and tokens through `/api/v1/settings/mcp` and `/api/v1/mcp-tokens`.
 
-An authenticated RackChief user enables it with `PATCH /api/v1/settings/mcp` and `{"enabled":true}`. `GET /api/v1/settings/mcp` reads the current state. Normal V1 Supabase authentication protects these management routes and `GET/POST /api/v1/mcp-tokens` plus `PATCH/DELETE /api/v1/mcp-tokens/{id}`.
+`POST /api/v1/mcp-tokens` reveals the raw token once. The database stores only its SHA-256 hash. Disable or delete tokens that are no longer used. MCP tools call the same services as REST and include asset and project reads/actions, component reads/updates, rack placement actions, and network port/connection reads/actions. MCP exposes neither raw SQL nor a generic database tool.
 
-Create a separately named MCP token for each integration, such as Hermes, MetaMCP, or an OpenWebUI-compatible MCP client. The `POST /api/v1/mcp-tokens` response shows the raw token **once**. Save it then; later list and update responses contain only metadata. The database stores only its SHA-256 hash. Clients send:
+## V1 verification data
 
-```http
-Authorization: Bearer rc_mcp_xxxxx
+`scripts/verify-v1.mjs` is an optional, idempotent development dataset and API check. It creates a demo location hierarchy, 37U rack, server, NAS, switch, UPS, installed and spare components, placements, network interfaces and ports, IPv4 and IPv6 addresses, a connection, an asset relationship, and a project purchase item. It also checks several conflict responses and the assembled asset detail. Run only against the development environment while the API is running:
+
+```bash
+RACKCHIEF_TEST_TOKEN=$(npm run --silent auth:token) node scripts/verify-v1.mjs
 ```
 
-MCP tokens are distinct from Supabase JWTs. Disabled, expired, or deleted tokens fail authentication immediately. Token expiration is optional and can be changed or cleared through the management API. The token's `lastUsedAt` changes after successful authentication.
+The script never runs as part of migrations or production startup.
 
-Use HTTPS in production. Treat MCP tokens like passwords, create separate tokens per integration, revoke unused tokens, and set expiration dates when appropriate. No MCP-specific environment variable, container, or process is needed.
+## V1 scope
 
-The exposed tools are `assets_list`, `assets_get`, `projects_list`, `projects_get`, `projects_add_update`, `projects_add_item`, `projects_update_item`, and `projects_delete_item`. They call the same application services as the V1 REST API.
-
-After pulling this change, run `npm install`, `npm run db:migrate`, and `npm run build` from `Backend/` before restarting the existing backend process. Database migrations must run before enabling MCP or using its management routes.
+V1 is inventory and planning. Monitoring, polling, automatic discovery, infrastructure synchronization, DNS, DHCP, routing, firewall management, secrets, VLAN/subnet allocation, configuration management, vendor integrations, and cable inventory are outside its scope.

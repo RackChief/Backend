@@ -24,6 +24,7 @@ export const assetSchema = z.object({
     name: z.string(),
     status: assetStatusSchema,
 
+    locationId: z.uuid().nullable(),
     hostname: z.string().nullable(),
     ipAddress: z.string().nullable(),
 
@@ -46,6 +47,7 @@ export const createAssetSchema = z.object({
 
     status: assetStatusSchema.optional(),
 
+    locationId: z.uuid().nullable().optional(),
     hostname: z.string().optional(),
     ipAddress: z.string().optional(),
 
@@ -65,6 +67,7 @@ export const updateAssetSchema = z.object({
         .exclude(["archived"])
         .optional(),
 
+    locationId: z.uuid().nullable().optional(),
     hostname: z.string().nullable().optional(),
     ipAddress: z.string().nullable().optional(),
 

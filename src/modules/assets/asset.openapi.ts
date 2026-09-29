@@ -3,6 +3,10 @@ import type {
 } from "@asteasolutions/zod-to-openapi";
 
 import { z } from "../../openapi/zod.js";
+import { registerResourcePath, idParam } from "../../openapi/resource.js";
+import { componentSchema } from "../components/component.schema.js";
+import { interfaceSchema, addressSchema, portSchema } from "../networking/network.schema.js";
+import { relationshipSchema } from "../relationships/relationship.schema.js";
 
 import {
     assetSchema,
@@ -14,6 +18,11 @@ export function registerAssetOpenApi(
     registry: OpenAPIRegistry,
 ) {
     registry.register("Asset", assetSchema);
+    registerResourcePath(registry, { method: "get", path: "/api/v1/assets/{id}/detail", tag: "Assets", summary: "Get asset inventory detail", params: idParam, response: assetSchema.extend({
+        location: z.object({ id: z.uuid(), name: z.string(), parentId: z.uuid().nullable() }).nullable(),
+        rackPlacements: z.array(z.object({ id: z.uuid(), rackId: z.uuid(), assetId: z.uuid(), startUnit: z.number().int(), heightUnits: z.number().int(), orientation: z.enum(["front", "rear"]), notes: z.string().nullable(), createdAt: z.iso.datetime(), updatedAt: z.iso.datetime(), rack: z.object({ id: z.uuid(), name: z.string() }) })),
+        components: z.array(componentSchema), interfaces: z.array(interfaceSchema.extend({ ipAddresses: z.array(addressSchema) })), ports: z.array(portSchema), relationships: z.array(relationshipSchema),
+    }) });
     registry.register("CreateAsset", createAssetSchema);
     registry.register("UpdateAsset", updateAssetSchema);
 

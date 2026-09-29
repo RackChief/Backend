@@ -1,4 +1,9 @@
 import cors from "cors";
+import { relationshipRouter } from "./modules/relationships/relationship.routes.js";
+import { networkAssetRouter, interfaceRouter, portRouter, connectionRouter, addressRouter } from "./modules/networking/network.routes.js";
+import { rackRouter } from "./modules/racks/rack.routes.js";
+import { componentRouter, componentTypeRouter } from "./modules/components/component.routes.js";
+import { locationRouter } from "./modules/locations/location.routes.js";
 import express from "express";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
@@ -47,6 +52,16 @@ app.use(
 );
 
 app.use("/api/v1/projects", requireAuth, projectRouter);
+app.use("/api/v1/component-types", requireAuth, componentTypeRouter);
+app.use("/api/v1/components", requireAuth, componentRouter);
+app.use("/api/v1/locations", requireAuth, locationRouter);
+app.use("/api/v1/racks", requireAuth, rackRouter);
+app.use("/api/v1/assets", requireAuth, networkAssetRouter);
+app.use("/api/v1/network-interfaces", requireAuth, interfaceRouter);
+app.use("/api/v1/network-ports", requireAuth, portRouter);
+app.use("/api/v1/network-connections", requireAuth, connectionRouter);
+app.use("/api/v1/ip-addresses", requireAuth, addressRouter);
+app.use("/api/v1/asset-relationships", requireAuth, relationshipRouter);
 
 app.use("/api/v1/settings/mcp", requireAuth, mcpSettingsRouter);
 app.use("/api/v1/mcp-tokens", requireAuth, mcpTokenRouter);

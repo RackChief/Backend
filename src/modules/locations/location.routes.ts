@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { z } from "../../openapi/zod.js";
+import { createLocationSchema, updateLocationSchema } from "./location.schema.js";
+import { locationService } from "./location.service.js";
+export const locationRouter = Router();
+locationRouter.get("/", async (_req, res) => { res.json(await locationService.list()); });
+locationRouter.get("/:id", async (req, res) => { res.json(await locationService.get(z.uuid().parse(req.params.id))); });
+locationRouter.post("/", async (req, res) => { res.status(201).json(await locationService.create(createLocationSchema.parse(req.body))); });
+locationRouter.patch("/:id", async (req, res) => { res.json(await locationService.update(z.uuid().parse(req.params.id), updateLocationSchema.parse(req.body))); });
+locationRouter.delete("/:id", async (req, res) => { await locationService.delete(z.uuid().parse(req.params.id)); res.status(204).send(); });

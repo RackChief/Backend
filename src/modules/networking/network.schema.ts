@@ -1,0 +1,26 @@
+import { isIP } from "node:net";
+import { z } from "../../openapi/zod.js";
+export const interfaceTypeSchema = z.enum(["ethernet", "wireless", "virtual", "bridge", "bond", "loopback", "other"]);
+export const portTypeSchema = z.enum(["rj45", "sfp", "sfp_plus", "sfp28", "qsfp", "qsfp28", "fiber", "other"]);
+export const connectionTypeSchema = z.enum(["copper", "fiber", "dac", "other"]);
+export const macSchema = z.string().regex(/^(?:[0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}$/).transform(v => v.toLowerCase().replaceAll("-", ":"));
+export const ipSchema = z.string().refine(value => {
+    const [address, prefix, extra] = value.split("/");
+    if (extra !== undefined || !isIP(address)) return false;
+    if (prefix === undefined) return true;
+    const max = isIP(address) === 4 ? 32 : 128;
+    return /^\d+$/.test(prefix) && Number(prefix) <= max;
+}, "Invalid IPv4 or IPv6 address");
+const timestamps = { createdAt: z.iso.datetime(), updatedAt: z.iso.datetime() };
+export const interfaceSchema = z.object({ id: z.uuid(), assetId: z.uuid(), name: z.string(), description: z.string().nullable(), macAddress: z.string().nullable(), speedMbps: z.number().int().nullable(), interfaceType: interfaceTypeSchema, enabled: z.boolean(), notes: z.string().nullable(), ...timestamps });
+export const portSchema = z.object({ id: z.uuid(), assetId: z.uuid(), interfaceId: z.uuid().nullable(), name: z.string(), portNumber: z.number().int().nullable(), portType: portTypeSchema, speedMbps: z.number().int().nullable(), poeCapable: z.boolean(), poeEnabled: z.boolean(), enabled: z.boolean(), description: z.string().nullable(), notes: z.string().nullable(), ...timestamps });
+export const connectionSchema = z.object({ id: z.uuid(), portAId: z.uuid(), portBId: z.uuid(), connectionType: connectionTypeSchema.nullable(), label: z.string().nullable(), notes: z.string().nullable(), ...timestamps });
+export const addressSchema = z.object({ id: z.uuid(), networkInterfaceId: z.uuid(), address: z.string(), isPrimary: z.boolean(), description: z.string().nullable(), ...timestamps });
+export const createInterfaceSchema = z.object({ name: z.string().trim().min(1), description: z.string().nullable().optional(), macAddress: macSchema.nullable().optional(), speedMbps: z.number().int().positive().nullable().optional(), interfaceType: interfaceTypeSchema, enabled: z.boolean().optional(), notes: z.string().nullable().optional() }).strict();
+export const updateInterfaceSchema = createInterfaceSchema.partial();
+export const createPortSchema = z.object({ interfaceId: z.uuid().nullable().optional(), name: z.string().trim().min(1), portNumber: z.number().int().min(1).nullable().optional(), portType: portTypeSchema, speedMbps: z.number().int().positive().nullable().optional(), poeCapable: z.boolean().optional(), poeEnabled: z.boolean().optional(), enabled: z.boolean().optional(), description: z.string().nullable().optional(), notes: z.string().nullable().optional() }).strict();
+export const updatePortSchema = createPortSchema.partial();
+export const createConnectionSchema = z.object({ portAId: z.uuid(), portBId: z.uuid(), connectionType: connectionTypeSchema.nullable().optional(), label: z.string().nullable().optional(), notes: z.string().nullable().optional() }).strict();
+export const updateConnectionSchema = createConnectionSchema.partial();
+export const createAddressSchema = z.object({ address: ipSchema, isPrimary: z.boolean().optional(), description: z.string().nullable().optional() }).strict();
+export const updateAddressSchema = createAddressSchema.partial();

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "ip_addresses_one_primary_idx" ON "ip_addresses" USING btree ("network_interface_id") WHERE "ip_addresses"."is_primary" = true;

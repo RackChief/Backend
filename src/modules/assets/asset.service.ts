@@ -3,6 +3,7 @@ import type {
 } from "../../db/schema.js";
 
 import { assetRepository } from "./asset.repository.js";
+import { locationService } from "../locations/location.service.js";
 
 function notFound() {
     const error = new Error("Asset not found");
@@ -30,7 +31,8 @@ export const assetService = {
         return asset;
     },
 
-    create(input: NewAsset) {
+    async create(input: NewAsset) {
+        if (input.locationId) await locationService.get(input.locationId);
         return assetRepository.create(input);
     },
 
@@ -38,6 +40,7 @@ export const assetService = {
         id: string,
         input: Partial<NewAsset>,
     ) {
+        if (input.locationId) await locationService.get(input.locationId);
         const asset =
             await assetRepository.update(
                 id,

@@ -1,0 +1,14 @@
+import { Router } from "express";
+import { z } from "../../openapi/zod.js";
+import { componentFilterSchema, createComponentSchema, updateComponentSchema, createComponentTypeSchema } from "./component.schema.js";
+import { componentService } from "./component.service.js";
+export const componentTypeRouter = Router();
+componentTypeRouter.get("/", async (_req, res) => { res.json(await componentService.types()); });
+componentTypeRouter.post("/", async (req, res) => { res.status(201).json(await componentService.createType(createComponentTypeSchema.parse(req.body))); });
+componentTypeRouter.get("/:id", async (req, res) => { res.json(await componentService.type(z.uuid().parse(req.params.id))); });
+export const componentRouter = Router();
+componentRouter.get("/", async (req, res) => { res.json(await componentService.list(componentFilterSchema.parse(req.query))); });
+componentRouter.get("/:id", async (req, res) => { res.json(await componentService.get(z.uuid().parse(req.params.id))); });
+componentRouter.post("/", async (req, res) => { res.status(201).json(await componentService.create(createComponentSchema.parse(req.body))); });
+componentRouter.patch("/:id", async (req, res) => { res.json(await componentService.update(z.uuid().parse(req.params.id), updateComponentSchema.parse(req.body))); });
+componentRouter.delete("/:id", async (req, res) => { await componentService.delete(z.uuid().parse(req.params.id)); res.status(204).send(); });

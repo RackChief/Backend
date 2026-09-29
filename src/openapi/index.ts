@@ -4,6 +4,11 @@ import {
 } from "@asteasolutions/zod-to-openapi";
 
 import { z } from "./zod.js";
+import { registerComponentOpenApi } from "../modules/components/component.openapi.js";
+import { registerLocationOpenApi } from "../modules/locations/location.openapi.js";
+import { registerRackOpenApi } from "../modules/racks/rack.openapi.js";
+import { registerNetworkOpenApi } from "../modules/networking/network.openapi.js";
+import { registerRelationshipOpenApi } from "../modules/relationships/relationship.openapi.js";
 
 import {
     registerAssetOpenApi,
@@ -50,6 +55,11 @@ registerAssetOpenApi(registry);
 registerAssetTypeOpenApi(registry);
 registerProjectOpenApi(registry);
 registerMcpAdminOpenApi(registry);
+registerComponentOpenApi(registry);
+registerLocationOpenApi(registry);
+registerRackOpenApi(registry);
+registerNetworkOpenApi(registry);
+registerRelationshipOpenApi(registry);
 
 const generator = new OpenApiGeneratorV3(
     registry.definitions,
