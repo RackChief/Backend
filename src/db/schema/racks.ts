@@ -1,4 +1,4 @@
-import { index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { index, integer, numeric, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { assets } from "./assets.js";
 import { locations } from "./locations.js";
 
@@ -16,7 +16,7 @@ export const rackPlacements = pgTable("rack_placements", {
     id: uuid("id").primaryKey().defaultRandom(),
     rackId: uuid("rack_id").notNull().references(() => racks.id, { onDelete: "restrict" }),
     assetId: uuid("asset_id").notNull().references(() => assets.id, { onDelete: "restrict" }),
-    startUnit: integer("start_unit").notNull(), heightUnits: integer("height_units").notNull().default(1),
+    startUnit: integer("start_unit").notNull(), heightUnits: numeric("height_units", { precision: 4, scale: 1, mode: "number" }).notNull().default(1),
     orientation: rackOrientation("orientation").notNull().default("front"),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

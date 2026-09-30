@@ -32,6 +32,13 @@ export const assetSchema = z.object({
     manufacturer: z.string().nullable(),
     model: z.string().nullable(),
     serialNumber: z.string().nullable(),
+    rackUnits: z.number().min(0).max(100).refine(value => value % 0.5 === 0),
+    deviceTypeSource: z.string().nullable(),
+    deviceTypePath: z.string().nullable(),
+    deviceTypeData: z.record(z.string(), z.unknown()).nullable(),
+    catalogProvider: z.string().nullable(),
+    catalogDeviceId: z.string().nullable(),
+    catalogRevision: z.string().nullable(),
 
     notes: z.string().nullable(),
 
@@ -55,6 +62,13 @@ export const createAssetSchema = z.object({
     manufacturer: z.string().optional(),
     model: z.string().optional(),
     serialNumber: z.string().optional(),
+    rackUnits: z.number().min(0).max(100).refine(value => value % 0.5 === 0).optional(),
+    deviceTypeSource: z.string().optional(),
+    deviceTypePath: z.string().optional(),
+    deviceTypeData: z.record(z.string(), z.unknown()).optional(),
+    catalogProvider: z.string().optional(),
+    catalogDeviceId: z.string().optional(),
+    catalogRevision: z.string().optional(),
 
     notes: z.string().optional(),
 });
@@ -75,6 +89,13 @@ export const updateAssetSchema = z.object({
     manufacturer: z.string().nullable().optional(),
     model: z.string().nullable().optional(),
     serialNumber: z.string().nullable().optional(),
+    rackUnits: z.number().min(0).max(100).refine(value => value % 0.5 === 0).optional(),
+    deviceTypeSource: z.string().nullable().optional(),
+    deviceTypePath: z.string().nullable().optional(),
+    deviceTypeData: z.record(z.string(), z.unknown()).nullable().optional(),
+    catalogProvider: z.string().nullable().optional(),
+    catalogDeviceId: z.string().nullable().optional(),
+    catalogRevision: z.string().nullable().optional(),
 
     notes: z.string().nullable().optional(),
 });

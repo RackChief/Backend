@@ -22,6 +22,9 @@ import { mcpAdminService } from "./modules/mcp-admin/mcp-admin.service.js";
 import { deviceImageRouter } from "./modules/device-images/device-image.routes.js";
 import { db } from "./db/index.js";
 import { sql } from "drizzle-orm";
+import { deviceLibraryRouter } from "./modules/device-library/device-library.routes.js";
+import { catalogRouter } from "./modules/catalog/catalog.routes.js";
+import { startupState } from "./startup-state.js";
 
 export const app = express();
 
@@ -34,6 +37,7 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 
 app.get("/health", async (_req, res) => {
+    if (startupState.get().phase !== "ready") { res.status(503).json({ status: "starting", ...startupState.get() }); return; }
     try {
         await db.execute(sql`select 1`);
         res.json({ status: "ok" });
@@ -42,11 +46,15 @@ app.get("/health", async (_req, res) => {
     }
 });
 
+app.get("/startup/status", (_req, res) => { const status = startupState.get(); res.status(status.phase === "ready" ? 200 : status.phase === "error" ? 503 : 202).json(status); });
+
 app.get("/openapi.json", (_req, res) => {
     res.json(openApiDocument);
 });
 
 app.use("/api/v1/setup", setupRouter);
+app.use("/api/v1/device-library", deviceLibraryRouter);
+app.use("/api/v1/catalog", catalogRouter);
 
 app.use(
     "/docs",

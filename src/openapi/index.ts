@@ -21,6 +21,7 @@ import { registerMcpAdminOpenApi } from "../modules/mcp-admin/mcp-admin.openapi.
 import { registerProjectOpenApi } from "../modules/projects/project.openapi.js";
 import { registerDeviceImageOpenApi } from "../modules/device-images/device-image.openapi.js";
 import { registerSetupOpenApi } from "../modules/setup/setup.openapi.js";
+import { registerCatalogOpenApi } from "../modules/catalog/catalog.openapi.js";
 
 const registry = new OpenAPIRegistry();
 
@@ -74,6 +75,7 @@ registerNetworkOpenApi(registry);
 registerRelationshipOpenApi(registry);
 registerDeviceImageOpenApi(registry);
 registerSetupOpenApi(registry);
+registerCatalogOpenApi(registry);
 
 const generator = new OpenApiGeneratorV3(
     registry.definitions,

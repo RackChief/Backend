@@ -1,0 +1,6 @@
+import { netboxDeviceTypeLibraryProvider } from "../catalog/providers/netbox-device-type-library.provider.js";
+export type DeviceTypePreview = { path: string; manufacturer: string; model: string; slug?: string; partNumber?: string; rackUnits: number; isFullDepth: boolean; comments?: string; airflow?: string; weight?: number; weightUnit?: string; raw: Record<string, unknown> };
+export const deviceLibraryService = {
+  async search(query: string) { return (await netboxDeviceTypeLibraryProvider.searchDeviceTypes({ q: query, limit: 50 })).map(entry => ({ path: entry.id, label: `${entry.manufacturer}/${entry.model}` })); },
+  async preview(id: string): Promise<DeviceTypePreview> { const entry = await netboxDeviceTypeLibraryProvider.getDeviceType(id); if (!entry) throw Object.assign(new Error("Device type definition is unavailable"), { statusCode: 404 }); return { path: entry.id, manufacturer: entry.manufacturer, model: entry.model, slug: entry.slug, ...(entry.partNumber ? { partNumber: entry.partNumber } : {}), rackUnits: entry.uHeight ?? 1, isFullDepth: entry.isFullDepth ?? true, ...(entry.airflow ? { airflow: entry.airflow } : {}), ...(entry.weight == null ? {} : { weight: entry.weight }), ...(entry.weightUnit ? { weightUnit: entry.weightUnit } : {}), raw: entry as unknown as Record<string, unknown> }; },
+};

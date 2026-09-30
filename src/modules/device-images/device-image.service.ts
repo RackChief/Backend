@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { AssetWithType } from "../assets/asset.repository.js";
+import { catalogRoot, netboxDeviceTypeLibraryProvider } from "../catalog/providers/netbox-device-type-library.provider.js";
 
 export type ImageSide = "front" | "rear";
 type ImageFile = { bytes: Buffer; contentType: string; source: "custom" | "netbox" };
@@ -15,6 +16,8 @@ const extensions = ["png", "jpg", "jpeg", "webp"] as const;
 const mime: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" };
 const pending = new Map<string, Promise<ImageFile | null>>();
 const unavailableUntil = new Map<string, number>();
+type CatalogImage = { path: string; side: ImageSide; label: string; rawUrl: string };
+let catalogCache: { expires: number; images: CatalogImage[] } | null = null;
 
 function slug(value: string) {
     return value.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100);
@@ -25,6 +28,10 @@ function imageType(bytes: Buffer): string | null {
     if (bytes.length >= 3 && bytes.subarray(0, 3).equals(Buffer.from([255, 216, 255]))) return "jpg";
     if (bytes.length >= 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP") return "webp";
     return null;
+}
+async function readCatalogImage(relativePath: string): Promise<ImageFile | null> {
+    if (relativePath.includes("..") || relativePath.startsWith("/") || relativePath.includes("\\")) return null;
+    try { const bytes = await readFile(join(catalogRoot, "elevation-images", relativePath)); const ext = imageType(bytes); return ext && bytes.length <= maxBytes ? { bytes, contentType: mime[ext], source: "netbox" } : null; } catch { return null; }
 }
 
 async function findImage(directory: string, prefix: string, source: ImageFile["source"]): Promise<ImageFile | null> {
@@ -108,10 +115,44 @@ async function fetchDefault(manufacturer: string, model: string, side: ImageSide
 }
 
 export const deviceImageService = {
+    async searchCatalog(query: string): Promise<CatalogImage[]> {
+        const normalized = query.trim().toLowerCase();
+        if (normalized.length < 2) return [];
+        let images = catalogCache?.expires && catalogCache.expires > Date.now() ? catalogCache.images : null;
+        if (!images) {
+            const results = await netboxDeviceTypeLibraryProvider.searchDeviceTypes({ q: query, limit: 1000 });
+            images = results.flatMap((entry) => [
+                ...(entry.frontImageAvailable ? [{ path: `${entry.id}.front`, side: "front" as const, label: `${entry.manufacturer}/${entry.slug}.front`, rawUrl: "" }] : []),
+                ...(entry.rearImageAvailable ? [{ path: `${entry.id}.rear`, side: "rear" as const, label: `${entry.manufacturer}/${entry.slug}.rear`, rawUrl: "" }] : []),
+            ]);
+            catalogCache = { expires: Date.now() + 10 * 60 * 1000, images };
+        }
+        return images.filter((image) => image.label.toLowerCase().includes(normalized)).slice(0, 50);
+    },
+    async setCatalog(assetId: string, side: ImageSide, path: string) {
+        const results = await this.searchCatalog(path);
+        const selected = results.find((image) => image.path === path && image.side === side);
+        if (!selected) throw Object.assign(new Error("That catalog image is not available for this side"), { statusCode: 400 });
+        const [deviceId] = selected.path.split(`.${side}`);
+        const device = await netboxDeviceTypeLibraryProvider.getDeviceType(deviceId);
+        const imagePath = device?.images[side];
+        if (!imagePath || !imagePath.startsWith("")) throw Object.assign(new Error("Catalog image is unavailable"), { statusCode: 404 });
+        const image = await readCatalogImage(imagePath);
+        if (!image) throw Object.assign(new Error("Catalog image is unavailable"), { statusCode: 404 });
+        return this.setCustom(assetId, side, image.bytes);
+    },
     async resolve(asset: AssetWithType, side: ImageSide): Promise<ImageFile | null> {
         const custom = await findImage(join(root, "custom"), `${asset.id}.${side}`, "custom");
         if (custom) return custom;
         if (!asset.manufacturer || !asset.model) return null;
+        const catalog = await netboxDeviceTypeLibraryProvider.searchDeviceTypes({ q: `${asset.manufacturer} ${asset.model}`, limit: 10 });
+        for (const summary of catalog) {
+            const device = await netboxDeviceTypeLibraryProvider.getDeviceType(summary.id);
+            const imagePath = device?.images[side];
+            if (imagePath) {
+                const image = await readCatalogImage(imagePath); if (image) return image;
+            }
+        }
         const key = `${slug(asset.manufacturer)}/${slug(asset.model)}/${side}`;
         let task = pending.get(key);
         if (!task) {

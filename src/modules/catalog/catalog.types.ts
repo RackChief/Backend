@@ -1,0 +1,4 @@
+export type CatalogSearchQuery = { q?: string; manufacturer?: string; uHeight?: number; hasFrontImage?: boolean; hasRearImage?: boolean; limit?: number; offset?: number };
+export type CatalogManufacturer = { name: string; deviceCount: number };
+export type CatalogDeviceTypeSummary = { provider: string; id: string; sourceRevision: string; manufacturer: string; model: string; slug: string; partNumber: string | null; uHeight: number | null; frontImageAvailable: boolean; rearImageAvailable: boolean };
+export type CatalogDeviceType = CatalogDeviceTypeSummary & { isFullDepth: boolean | null; airflow: string | null; weight: number | null; weightUnit: string | null; interfaces: unknown[]; consolePorts: unknown[]; powerPorts: unknown[]; powerOutlets: unknown[]; frontPorts: unknown[]; rearPorts: unknown[]; moduleBays: unknown[]; deviceBays: unknown[]; inventoryItems: unknown[]; images: { front: string | null; rear: string | null } };

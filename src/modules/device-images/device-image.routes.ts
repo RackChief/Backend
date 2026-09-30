@@ -8,6 +8,12 @@ import { signedImageUrls, validImageSignature } from "./device-image-signing.js"
 export const deviceImageRouter = Router();
 const params = z.object({ assetId: z.uuid(), side: z.enum(["front", "rear"]) });
 const upload = raw({ type: ["image/png", "image/jpeg", "image/webp"], limit: "5mb" });
+const catalogSelection = z.object({ path: z.string().min(1).max(500) }).strict();
+
+deviceImageRouter.get("/catalog", requireAuth, async (req, res) => {
+    const query = z.object({ q: z.string().min(2).max(100) }).parse(req.query);
+    res.json(await deviceImageService.searchCatalog(query.q));
+});
 
 deviceImageRouter.get("/:assetId/urls", requireAuth, async (req, res) => {
     const assetId = z.uuid().parse(req.params.assetId);
@@ -38,6 +44,13 @@ deviceImageRouter.put("/:assetId/:side", requireAuth, upload, async (req, res) =
     if (!Buffer.isBuffer(req.body)) { res.status(400).json({ error: "Send PNG, JPEG, or WebP image bytes" }); return; }
     const contentType = await deviceImageService.setCustom(assetId, side, req.body);
     res.json({ side, contentType, source: "custom" });
+});
+
+deviceImageRouter.post("/:assetId/:side/catalog", requireAuth, async (req, res) => {
+    const { assetId, side } = params.parse(req.params);
+    await assetService.get(assetId);
+    const contentType = await deviceImageService.setCatalog(assetId, side, catalogSelection.parse(req.body).path);
+    res.json({ side, contentType, source: "catalog" });
 });
 
 deviceImageRouter.delete("/:assetId/:side", requireAuth, async (req, res) => {

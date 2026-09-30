@@ -8,7 +8,7 @@ export const rackRepository = {
     async update(id: string, input: Partial<NewRack>) { return (await db.update(racks).set({ ...input, updatedAt: new Date() }).where(eq(racks.id, id)).returning())[0]; },
     async delete(id: string) { return (await db.delete(racks).where(eq(racks.id, id)).returning()).length > 0; },
     async placements(rackId: string) {
-        const rows = await db.select({ placement: rackPlacements, asset: { id: assets.id, name: assets.name, status: assets.status, assetTypeId: assets.assetTypeId } }).from(rackPlacements).innerJoin(assets, eq(rackPlacements.assetId, assets.id)).where(eq(rackPlacements.rackId, rackId)).orderBy(asc(rackPlacements.startUnit));
+        const rows = await db.select({ placement: rackPlacements, asset: { id: assets.id, name: assets.name, status: assets.status, assetTypeId: assets.assetTypeId, rackUnits: assets.rackUnits } }).from(rackPlacements).innerJoin(assets, eq(rackPlacements.assetId, assets.id)).where(eq(rackPlacements.rackId, rackId)).orderBy(asc(rackPlacements.startUnit));
         return rows.map(row => ({ ...row.placement, asset: row.asset }));
     },
     async placement(id: string) { return (await db.select().from(rackPlacements).where(eq(rackPlacements.id, id)).limit(1))[0]; },

@@ -1,0 +1,2 @@
+import type { CatalogDeviceType, CatalogDeviceTypeSummary, CatalogManufacturer, CatalogSearchQuery } from "../catalog.types.js";
+export interface DeviceCatalogProvider { id: string; name: string; getRevision(): Promise<string>; listManufacturers(): Promise<CatalogManufacturer[]>; searchDeviceTypes(query: CatalogSearchQuery): Promise<CatalogDeviceTypeSummary[]>; getDeviceType(id: string): Promise<CatalogDeviceType | null>; }

@@ -1,5 +1,5 @@
 import { locations } from "./locations.js";
-import { boolean, date, index, inet, jsonb, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, inet, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 export const assetStatus = pgEnum("asset_status", [
     "planned",
     "active",
@@ -73,6 +73,13 @@ export const assets = pgTable(
         manufacturer: text("manufacturer"),
         model: text("model"),
         serialNumber: text("serial_number"),
+        rackUnits: numeric("rack_units", { precision: 4, scale: 1, mode: "number" }).notNull().default(1),
+        deviceTypeSource: text("device_type_source"),
+        deviceTypePath: text("device_type_path"),
+        deviceTypeData: jsonb("device_type_data"),
+        catalogProvider: text("catalog_provider"),
+        catalogDeviceId: text("catalog_device_id"),
+        catalogRevision: text("catalog_revision"),
 
         notes: text("notes"),
 

@@ -9,6 +9,7 @@ export const auth = betterAuth({
     database: drizzleAdapter(db, { provider: "pg", schema }),
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
+    trustedOrigins: env.BETTER_AUTH_TRUSTED_ORIGINS,
     emailAndPassword: { enabled: true },
     databaseHooks: { user: { create: { before: async () => {
         const rows = await db.execute<{ count: string }>(sql`select count(*)::text as count from "user"`);
