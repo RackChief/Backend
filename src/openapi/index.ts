@@ -50,6 +50,16 @@ registry.registerPath({
                 },
             },
         },
+        503: {
+            description: "PostgreSQL is unavailable",
+            content: {
+                "application/json": {
+                    schema: z.object({
+                        status: z.literal("unavailable"),
+                    }),
+                },
+            },
+        },
     },
 });
 

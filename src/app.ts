@@ -20,6 +20,8 @@ import { projectRouter } from "./modules/projects/project.routes.js";
 import { mcpSettingsRouter, mcpTokenRouter } from "./modules/mcp-admin/mcp-admin.routes.js";
 import { mcpAdminService } from "./modules/mcp-admin/mcp-admin.service.js";
 import { deviceImageRouter } from "./modules/device-images/device-image.routes.js";
+import { db } from "./db/index.js";
+import { sql } from "drizzle-orm";
 
 export const app = express();
 
@@ -31,10 +33,13 @@ app.all("/api/auth/sign-up/email", (_req, res) => {
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 
-app.get("/health", (_req, res) => {
-    res.json({
-        status: "ok",
-    });
+app.get("/health", async (_req, res) => {
+    try {
+        await db.execute(sql`select 1`);
+        res.json({ status: "ok" });
+    } catch {
+        res.status(503).json({ status: "unavailable" });
+    }
 });
 
 app.get("/openapi.json", (_req, res) => {
