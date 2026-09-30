@@ -15,6 +15,16 @@ deviceImageRouter.get("/catalog", requireAuth, async (req, res) => {
     res.json(await deviceImageService.searchCatalog(query.q));
 });
 
+deviceImageRouter.get("/library", requireAuth, async (_req, res) => {
+    const [images, assets] = await Promise.all([deviceImageService.uploadedImages(), assetService.list()]);
+    const names = new Map(assets.map(asset => [asset.id, asset.name]));
+    const library = images.flatMap(image => {
+        const assetName = names.get(image.assetId);
+        return assetName ? [{ ...image, assetName, previewUrl: signedImageUrls(image.assetId)[image.side] }] : [];
+    });
+    res.json(library.sort((a, b) => a.assetName.localeCompare(b.assetName)));
+});
+
 deviceImageRouter.get("/:assetId/urls", requireAuth, async (req, res) => {
     const assetId = z.uuid().parse(req.params.assetId);
     await assetService.get(assetId);
@@ -36,6 +46,14 @@ deviceImageRouter.get("/:assetId", requireAuth, async (req, res) => {
     const assetId = z.uuid().parse(req.params.assetId);
     await assetService.get(assetId);
     res.json(await deviceImageService.customSides(assetId));
+});
+
+deviceImageRouter.post("/:assetId/:side/from-asset", requireAuth, async (req, res) => {
+    const { assetId, side } = params.parse(req.params);
+    const source = z.object({ sourceAssetId: z.uuid(), sourceSide: z.enum(["front", "rear"]) }).strict().parse(req.body);
+    await Promise.all([assetService.get(assetId), assetService.get(source.sourceAssetId)]);
+    const contentType = await deviceImageService.copyCustom(assetId, side, source.sourceAssetId, source.sourceSide);
+    res.json({ side, contentType, source: "custom" });
 });
 
 deviceImageRouter.put("/:assetId/:side", requireAuth, upload, async (req, res) => {

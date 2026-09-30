@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { AssetWithType } from "../assets/asset.repository.js";
 import { catalogRoot, netboxDeviceTypeLibraryProvider } from "../catalog/providers/netbox-device-type-library.provider.js";
 
 export type ImageSide = "front" | "rear";
 type ImageFile = { bytes: Buffer; contentType: string; source: "custom" | "netbox" };
-const root = process.env.DEVICE_IMAGE_DIR || "/data/device-images";
+const root = process.env.DEVICE_IMAGE_DIR || fileURLToPath(new URL("../../../.data/device-images/", import.meta.url));
 const maxBytes = 5 * 1024 * 1024;
 const missingTtlMs = 24 * 60 * 60 * 1000;
 const lookupBudgetMs = 10000;
@@ -115,6 +116,25 @@ async function fetchDefault(manufacturer: string, model: string, side: ImageSide
 }
 
 export const deviceImageService = {
+    async uploadedImages(): Promise<{ assetId: string; side: ImageSide }[]> {
+        let names: string[];
+        try { names = await readdir(join(root, "custom")); }
+        catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return []; throw error; }
+        const images = new Map<string, { assetId: string; side: ImageSide }>();
+        for (const name of names) {
+            const match = /^([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})\.(front|rear)\.(png|jpe?g|webp)$/i.exec(name);
+            if (!match) continue;
+            const assetId = match[1].toLowerCase();
+            const side = match[2].toLowerCase() as ImageSide;
+            images.set(`${assetId}:${side}`, { assetId, side });
+        }
+        return [...images.values()];
+    },
+    async copyCustom(targetAssetId: string, targetSide: ImageSide, sourceAssetId: string, sourceSide: ImageSide) {
+        const image = await findImage(join(root, "custom"), `${sourceAssetId}.${sourceSide}`, "custom");
+        if (!image) throw Object.assign(new Error("Uploaded image not found"), { statusCode: 404 });
+        return this.setCustom(targetAssetId, targetSide, image.bytes);
+    },
     async searchCatalog(query: string): Promise<CatalogImage[]> {
         const normalized = query.trim().toLowerCase();
         if (normalized.length < 2) return [];
