@@ -2,7 +2,7 @@
 
 RackChief uses Express 5, TypeScript, Drizzle ORM, PostgreSQL, Better Auth, Zod, OpenAPI, and MCP.
 
-Use the configured `DATABASE_URL`; PostgreSQL may be local, Docker-hosted, NAS-hosted, or managed. Do not create extra databases, containers, or infrastructure unless explicitly requested. Migrations target the configured development database and should be additive; do not rewrite committed migrations.
+Use the configured `PG_USER`, `PG_PASS`, `PG_HOST`, `PG_DB_NAME`, and optional `PG_PORT`/`PG_SSLMODE`; the backend builds its PostgreSQL URL from these values. PostgreSQL may be local, Docker-hosted, NAS-hosted, or managed. Do not create extra databases, containers, or infrastructure unless explicitly requested. Migrations target the configured development database and should be additive; do not rewrite committed migrations.
 
 Keep business logic in services, database access in repositories, and routes thin. Normal REST authentication uses Better Auth server-side sessions and HttpOnly cookies. The first-run setup endpoints create the only initial administrator; public registration remains disabled afterward. Do not implement custom password hashing, JWTs, refresh tokens, or cryptography.
 

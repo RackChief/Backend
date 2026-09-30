@@ -23,7 +23,7 @@ export function registerAssetTypeOpenApi(
         summary: "List all asset types",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         responses: {
@@ -48,7 +48,7 @@ export function registerAssetTypeOpenApi(
         summary: "Get an asset type by ID",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         request: {

@@ -38,9 +38,9 @@ export const netboxDeviceTypeLibraryProvider: DeviceCatalogProvider = {
     return rows.map(summary);
   },
   async getDeviceType(id: string): Promise<CatalogDeviceType | null> {
+    const path = safeDevicePath(id);
     const [row] = await db.select().from(catalogDeviceTypes).where(and(eq(catalogDeviceTypes.providerId, providerId), eq(catalogDeviceTypes.deviceId, id))).limit(1);
     if (!row) return null;
-    const path = safeDevicePath(id);
     let raw: Record<string, unknown>;
     try { raw = parse(await readFile(path, "utf8")) as Record<string, unknown>; }
     catch { try { raw = parse(await readFile(path.replace(/\.yaml$/i, ".yml"), "utf8")) as Record<string, unknown>; } catch { return null; } }

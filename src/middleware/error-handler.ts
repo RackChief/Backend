@@ -17,13 +17,14 @@ export const errorHandler: ErrorRequestHandler = (
         return;
     }
 
-    if (["23503", "23505", "23514"].includes(error.code)) {
+    const databaseError = error?.cause ?? error;
+    if (["23503", "23505", "23514", "23P01"].includes(databaseError?.code)) {
         res.status(409).json({ error: "Inventory constraint conflict" });
         return;
     }
-    const status = error.statusCode ?? 500;
-    if (status >= 500) console.error(error);
+    const status = error.statusCode ?? error.status ?? 500;
+    if (status >= 500) console.error("Request failed", error instanceof Error ? error.name : "unknown");
     res.status(status).json({
-        error: status >= 500 ? "Internal Server Error" : error.message,
+        error: status >= 500 ? "Internal Server Error" : status === 413 ? "Request too large" : error.type === "entity.parse.failed" ? "Malformed JSON" : error.message,
     });
 };

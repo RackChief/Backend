@@ -41,12 +41,16 @@ export const projectService = {
 
     async create(input: CreateProject) {
         const { assetIds = [], ...project } = input;
-        return withAssetValidation(() => projectRepository.create(project, assetIds));
+        return withAssetValidation(() => projectRepository.create(project.status === "archived" ? { ...project, archivedAt: new Date() } : project, assetIds));
     },
 
     async update(id: string, input: UpdateProject) {
         const { assetIds, ...project } = input;
-        const updated = await withAssetValidation(() => projectRepository.update(id, project, assetIds));
+        if (project.status !== undefined && (await this.get(id)).archivedAt && project.status !== "archived") {
+            throw httpError("Restore the project before changing its status", 409);
+        }
+        const values = project.status === "archived" ? { ...project, archivedAt: new Date() } : project;
+        const updated = await withAssetValidation(() => projectRepository.update(id, values, assetIds));
         if (!updated) throw httpError("Project not found", 404);
         return updated;
     },

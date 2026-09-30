@@ -20,7 +20,7 @@ export function registerAssetOpenApi(
     registry.register("Asset", assetSchema);
     registerResourcePath(registry, { method: "get", path: "/api/v1/assets/{id}/detail", tag: "Assets", summary: "Get asset inventory detail", params: idParam, response: assetSchema.extend({
         location: z.object({ id: z.uuid(), name: z.string(), parentId: z.uuid().nullable() }).nullable(),
-        rackPlacements: z.array(z.object({ id: z.uuid(), rackId: z.uuid(), assetId: z.uuid(), startUnit: z.number().int(), heightUnits: z.number().int(), orientation: z.enum(["front", "rear"]), notes: z.string().nullable(), createdAt: z.iso.datetime(), updatedAt: z.iso.datetime(), rack: z.object({ id: z.uuid(), name: z.string() }) })),
+        rackPlacements: z.array(z.object({ id: z.uuid(), rackId: z.uuid(), assetId: z.uuid(), startUnit: z.number().int(), heightUnits: z.number(), orientation: z.enum(["front", "rear"]), notes: z.string().nullable(), createdAt: z.iso.datetime(), updatedAt: z.iso.datetime(), rack: z.object({ id: z.uuid(), name: z.string() }) })),
         components: z.array(componentSchema), interfaces: z.array(interfaceSchema.extend({ ipAddresses: z.array(addressSchema) })), ports: z.array(portSchema), relationships: z.array(relationshipSchema),
     }) });
     registry.register("CreateAsset", createAssetSchema);
@@ -33,7 +33,7 @@ export function registerAssetOpenApi(
         summary: "List all assets",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         responses: {
@@ -58,7 +58,7 @@ export function registerAssetOpenApi(
         summary: "Get an asset by ID",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         request: {
@@ -91,7 +91,7 @@ export function registerAssetOpenApi(
         summary: "Create an asset",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         request: {
@@ -129,7 +129,7 @@ export function registerAssetOpenApi(
         summary: "Update an asset",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         request: {
@@ -173,7 +173,7 @@ export function registerAssetOpenApi(
         summary: "Archive an asset",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         request: {
@@ -206,7 +206,7 @@ export function registerAssetOpenApi(
         summary: "Restore an archived asset",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         request: {
@@ -239,7 +239,7 @@ export function registerAssetOpenApi(
         summary: "Permanently delete an archived asset",
         security: [
             {
-                bearerAuth: [],
+                cookieAuth: [],
             },
         ],
         request: {

@@ -25,6 +25,7 @@ import { registerCatalogOpenApi } from "../modules/catalog/catalog.openapi.js";
 
 const registry = new OpenAPIRegistry();
 
+registry.registerComponent("securitySchemes", "cookieAuth", { type: "apiKey", in: "cookie", name: "better-auth.session_token", description: "Better Auth session cookie. The browser sends this automatically with credentials." });
 registry.registerComponent(
     "securitySchemes",
     "bearerAuth",
@@ -52,18 +53,17 @@ registry.registerPath({
             },
         },
         503: {
-            description: "PostgreSQL is unavailable",
+            description: "Starting or PostgreSQL unavailable",
             content: {
                 "application/json": {
-                    schema: z.object({
-                        status: z.literal("unavailable"),
-                    }),
+                    schema: z.union([z.object({ status: z.literal("unavailable") }), z.object({ status: z.literal("starting"), phase: z.string(), message: z.string(), catalog: z.object({ status: z.string(), revision: z.string().optional(), entryCount: z.number().optional(), message: z.string().optional() }) })]),
                 },
             },
         },
     },
 });
 
+registry.registerPath({ method: "get", path: "/startup/status", tags: ["System"], summary: "Poll startup phase", responses: { 200: { description: "Ready" }, 202: { description: "Startup in progress" }, 503: { description: "Startup failed" } } });
 registerAssetOpenApi(registry);
 registerAssetTypeOpenApi(registry);
 registerProjectOpenApi(registry);
@@ -76,6 +76,8 @@ registerRelationshipOpenApi(registry);
 registerDeviceImageOpenApi(registry);
 registerSetupOpenApi(registry);
 registerCatalogOpenApi(registry);
+registry.registerPath({ method: "get", path: "/api/v1/device-library/device-types", tags: ["Device library compatibility"], security: [{ cookieAuth: [] }], request: { query: z.object({ q: z.string().min(2).max(100) }) }, responses: { 200: { description: "Matching device paths", content: { "application/json": { schema: z.array(z.object({ path: z.string(), label: z.string() })) } } } } });
+registry.registerPath({ method: "get", path: "/api/v1/device-library/device-types/preview", tags: ["Device library compatibility"], security: [{ cookieAuth: [] }], request: { query: z.object({ path: z.string().min(1).max(500) }) }, responses: { 200: { description: "Device preview and source record" }, 404: { description: "Device definition unavailable" } } });
 
 const generator = new OpenApiGeneratorV3(
     registry.definitions,

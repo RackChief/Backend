@@ -5,5 +5,5 @@ export const placementSchema = z.object({ id: z.uuid(), rackId: z.uuid(), assetI
 export const rackDetailSchema = rackSchema.extend({ placements: z.array(placementSchema) });
 export const createRackSchema = z.object({ name: z.string().trim().min(1), description: z.string().nullable().optional(), totalUnits: z.number().int().min(1).max(100), startingUnit: z.number().int().min(1).optional(), locationId: z.uuid().nullable().optional(), notes: z.string().nullable().optional() }).strict();
 export const updateRackSchema = createRackSchema.partial();
-export const createPlacementSchema = z.object({ assetId: z.uuid(), startUnit: z.number().int().min(1), heightUnits: z.number().int().min(1).optional(), orientation: rackOrientationSchema.optional(), notes: z.string().nullable().optional() }).strict();
+export const createPlacementSchema = z.object({ assetId: z.uuid(), startUnit: z.number().int().min(1), heightUnits: z.number().min(0.5).max(100).refine(value => value % 0.5 === 0).optional(), orientation: rackOrientationSchema.optional(), notes: z.string().nullable().optional() }).strict();
 export const updatePlacementSchema = createPlacementSchema.partial();

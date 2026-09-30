@@ -46,10 +46,10 @@ await component("V1 Demo Artemis SSD", "ssd", artemis.id, "installed", { capacit
 await component("V1 Demo Spare HBA", "hba", null, "spare");
 await component("V1 Demo Spare SSD", "ssd", null, "spare");
 if ((await request(`/components/${memory.id}`)).attributes.capacityGb !== 16) throw new Error("Component attributes failed to round-trip");
-for (const [assetId, startUnit, heightUnits] of [[ups.id, 1, 2], [nas.id, 4, 4], [artemis.id, 10, 2], [switchAsset.id, 20, 1]]) {
-    if (!(await request(`/racks/${rack.id}/placements`)).some(p => p.assetId === assetId)) await request(`/racks/${rack.id}/placements`, "POST", { assetId, startUnit, heightUnits });
+for (const [assetId, startUnit] of [[ups.id, 1], [nas.id, 4], [artemis.id, 10], [switchAsset.id, 20]]) {
+    if (!(await request(`/racks/${rack.id}/placements`)).some(p => p.assetId === assetId)) await request(`/racks/${rack.id}/placements`, "POST", { assetId, startUnit });
 }
-await request(`/racks/${rack.id}/placements`, "POST", { assetId: nas.id, startUnit: 10, heightUnits: 2 }, 409);
+await request(`/racks/${rack.id}/placements`, "POST", { assetId: nas.id, startUnit: 10 }, 409);
 async function iface(assetId, name, data) {
     return ensure(`/assets/${assetId}/interfaces`, `/assets/${assetId}/interfaces`, i => i.name === name, { name, ...data });
 }

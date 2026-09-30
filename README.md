@@ -1,8 +1,8 @@
 # RackChief Backend
 
-RackChief is fully self-hostable. The backend requires PostgreSQL through `DATABASE_URL`; managed PostgreSQL is optional. Authentication is provided locally by Better Auth using email/password and HttpOnly session cookies. No Supabase project or other cloud service is required.
+RackChief is fully self-hostable. The backend builds its PostgreSQL connection URL from `PG_USER`, `PG_PASS`, `PG_HOST`, `PG_DB_NAME`, and optional `PG_PORT` (default 5432) and `PG_SSLMODE`. Set `PG_HOST=db` for the optional development Docker database, or use a reachable external host in production. Authentication is provided locally by Better Auth using email/password and HttpOnly session cookies. No Supabase project or other cloud service is required.
 
-From `Backend/`, configure `DATABASE_URL`, `BETTER_AUTH_SECRET` (at least 32 random characters), and `BETTER_AUTH_URL`, then run `npm run build` and `npm start`. The backend applies pending Drizzle migrations before it starts listening; startup fails if PostgreSQL is unavailable or migrations cannot be applied.
+From `Backend/`, configure the `PG_*` variables, `BETTER_AUTH_SECRET` (at least 32 random characters), and `BETTER_AUTH_URL`, then run `npm run build` and `npm start`. The backend starts a status-only listener, applies pending Drizzle migrations, then prepares the optional catalog. Poll `/startup/status` while ordinary API routes return 503. Startup closes the listener if migrations fail.
 
 On a new database, `GET /api/v1/setup/status` reports whether setup is required. `POST /api/v1/setup/admin` creates the first administrator; once a user exists, further setup attempts and public registration are rejected.
 
@@ -17,3 +17,7 @@ Startup compares the fingerprint with the last successful import and skips parsi
 If the checkout or database index is unavailable, inventory and custom asset creation continue to work and catalog endpoints return no entries.
 
 Catalog data and elevation images are sourced from the NetBox Community Device Type Library. Catalog data helps create RackChief inventory but does not become RackChief's canonical schema. Created assets remain editable and may retain nullable source metadata for provenance; existing assets are never synchronized automatically.
+
+For a same-origin frontend, proxy `/api` to the backend. For a separate frontend origin, add its exact origin to `BETTER_AUTH_TRUSTED_ORIGINS` and send credentialed requests. The default development origins are `http://localhost:5173` and `http://127.0.0.1:5173`.
+
+Rack placement height follows `asset.rackUnits`. A zero-unit asset cannot be placed; a half-unit asset uses one displayed rack unit for overlap and capacity. `heightUnits` in a placement request is optional and must match the asset when supplied. See `docs/backend-guide.md` and `docs/backend-v1-status.md`.

@@ -34,7 +34,7 @@ export const assetService = {
 
     async create(input: NewAsset) {
         if (input.locationId) await locationService.get(input.locationId);
-        return assetRepository.create(input);
+        return assetRepository.create(input.status === "archived" ? { ...input, archivedAt: new Date() } : input);
     },
 
     async update(
@@ -42,6 +42,9 @@ export const assetService = {
         input: Partial<NewAsset>,
     ) {
         if (input.locationId) await locationService.get(input.locationId);
+        if (input.status !== undefined && (await this.get(id)).archivedAt) {
+            throw Object.assign(new Error("Restore the asset before changing its status"), { statusCode: 409 });
+        }
         const asset =
             await assetRepository.update(
                 id,
@@ -97,7 +100,9 @@ export const assetService = {
             throw error;
         }
 
-        await assetRepository.delete(id);
+        if (!await assetRepository.delete(id)) {
+            throw Object.assign(new Error("Asset must be archived before permanent deletion"), { statusCode: 409 });
+        }
         const cleanup = await Promise.allSettled([
             deviceImageService.deleteCustom(id, "front"),
             deviceImageService.deleteCustom(id, "rear"),

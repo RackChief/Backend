@@ -25,11 +25,16 @@ import { sql } from "drizzle-orm";
 import { deviceLibraryRouter } from "./modules/device-library/device-library.routes.js";
 import { catalogRouter } from "./modules/catalog/catalog.routes.js";
 import { startupState } from "./startup-state.js";
+import { env } from "./config/env.js";
 
 export const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: env.BETTER_AUTH_TRUSTED_ORIGINS, credentials: true }));
+app.use((req, res, next) => {
+    if (startupState.get().phase === "ready" || req.path === "/health" || req.path === "/startup/status" || req.path === "/openapi.json" || req.path.startsWith("/docs")) return next();
+    res.status(503).json({ error: "RackChief is starting", ...startupState.get() });
+});
 app.all("/api/auth/sign-up/email", (_req, res) => {
     res.status(404).json({ error: "Not found" });
 });

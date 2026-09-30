@@ -17,7 +17,7 @@ const mime: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg
 const pending = new Map<string, Promise<ImageFile | null>>();
 const unavailableUntil = new Map<string, number>();
 type CatalogImage = { path: string; side: ImageSide; label: string; rawUrl: string };
-let catalogCache: { expires: number; images: CatalogImage[] } | null = null;
+const catalogCache = new Map<string, { expires: number; images: CatalogImage[] }>();
 
 function slug(value: string) {
     return value.normalize("NFKD").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100);
@@ -118,25 +118,25 @@ export const deviceImageService = {
     async searchCatalog(query: string): Promise<CatalogImage[]> {
         const normalized = query.trim().toLowerCase();
         if (normalized.length < 2) return [];
-        let images = catalogCache?.expires && catalogCache.expires > Date.now() ? catalogCache.images : null;
+        const cached = catalogCache.get(normalized);
+        let images = cached && cached.expires > Date.now() ? cached.images : null;
         if (!images) {
-            const results = await netboxDeviceTypeLibraryProvider.searchDeviceTypes({ q: query, limit: 1000 });
+            const results = await netboxDeviceTypeLibraryProvider.searchDeviceTypes({ q: normalized, limit: 100 });
             images = results.flatMap((entry) => [
                 ...(entry.frontImageAvailable ? [{ path: `${entry.id}.front`, side: "front" as const, label: `${entry.manufacturer}/${entry.slug}.front`, rawUrl: "" }] : []),
                 ...(entry.rearImageAvailable ? [{ path: `${entry.id}.rear`, side: "rear" as const, label: `${entry.manufacturer}/${entry.slug}.rear`, rawUrl: "" }] : []),
             ]);
-            catalogCache = { expires: Date.now() + 10 * 60 * 1000, images };
+            if (catalogCache.size >= 64) catalogCache.delete(catalogCache.keys().next().value!);
+            catalogCache.set(normalized, { expires: Date.now() + 10 * 60 * 1000, images });
         }
-        return images.filter((image) => image.label.toLowerCase().includes(normalized)).slice(0, 50);
+        return images.slice(0, 50);
     },
     async setCatalog(assetId: string, side: ImageSide, path: string) {
-        const results = await this.searchCatalog(path);
-        const selected = results.find((image) => image.path === path && image.side === side);
-        if (!selected) throw Object.assign(new Error("That catalog image is not available for this side"), { statusCode: 400 });
-        const [deviceId] = selected.path.split(`.${side}`);
+        if (!path.endsWith(`.${side}`)) throw Object.assign(new Error("That catalog image is not available for this side"), { statusCode: 400 });
+        const deviceId = path.slice(0, -`.${side}`.length);
         const device = await netboxDeviceTypeLibraryProvider.getDeviceType(deviceId);
         const imagePath = device?.images[side];
-        if (!imagePath || !imagePath.startsWith("")) throw Object.assign(new Error("Catalog image is unavailable"), { statusCode: 404 });
+        if (!imagePath) throw Object.assign(new Error("Catalog image is unavailable"), { statusCode: 404 });
         const image = await readCatalogImage(imagePath);
         if (!image) throw Object.assign(new Error("Catalog image is unavailable"), { statusCode: 404 });
         return this.setCustom(assetId, side, image.bytes);
@@ -145,7 +145,7 @@ export const deviceImageService = {
         const custom = await findImage(join(root, "custom"), `${asset.id}.${side}`, "custom");
         if (custom) return custom;
         if (!asset.manufacturer || !asset.model) return null;
-        const catalog = await netboxDeviceTypeLibraryProvider.searchDeviceTypes({ q: `${asset.manufacturer} ${asset.model}`, limit: 10 });
+        const catalog = await netboxDeviceTypeLibraryProvider.searchDeviceTypes({ q: asset.model, manufacturer: asset.manufacturer, limit: 10 });
         for (const summary of catalog) {
             const device = await netboxDeviceTypeLibraryProvider.getDeviceType(summary.id);
             const imagePath = device?.images[side];

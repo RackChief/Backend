@@ -1,10 +1,12 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, isNotNull, and } from "drizzle-orm";
 
 import { db } from "../../db/index.js";
+import { assertRackFit, lockRackWrites } from "../racks/rack.repository.js";
 
 import {
     assets,
     assetTypes,
+    rackPlacements,
     type Asset,
     type AssetType,
     type NewAsset,
@@ -98,14 +100,15 @@ export const assetRepository = {
         id: string,
         input: Partial<NewAsset>,
     ): Promise<AssetWithType | undefined> {
-        const [asset] = await db
-            .update(assets)
-            .set({
-                ...input,
-                updatedAt: new Date(),
-            })
-            .where(eq(assets.id, id))
-            .returning();
+        const asset = await db.transaction(async tx => {
+            if (input.rackUnits !== undefined) {
+                await lockRackWrites(tx);
+                const placements = await tx.select().from(rackPlacements).where(eq(rackPlacements.assetId, id));
+                for (const placement of placements) await assertRackFit(tx, placement.rackId, id, placement.startUnit, placement.orientation, placement.id, input.rackUnits);
+                await tx.update(rackPlacements).set({ heightUnits: input.rackUnits, updatedAt: new Date() }).where(eq(rackPlacements.assetId, id));
+            }
+            return (await tx.update(assets).set({ ...input, updatedAt: new Date() }).where(eq(assets.id, id)).returning())[0];
+        });
 
         if (!asset) {
             return undefined;
@@ -159,7 +162,7 @@ export const assetRepository = {
     ): Promise<boolean> {
         const deleted = await db
             .delete(assets)
-            .where(eq(assets.id, id))
+            .where(and(eq(assets.id, id), isNotNull(assets.archivedAt)))
             .returning({
                 id: assets.id,
             });

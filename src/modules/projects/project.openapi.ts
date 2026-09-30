@@ -8,7 +8,7 @@ import {
     updateProjectSchema,
 } from "./project.schema.js";
 
-const security = [{ bearerAuth: [] }];
+const security = [{ cookieAuth: [] }];
 const response = (schema: z.ZodType, description: string) => ({
     description,
     content: { "application/json": { schema } },
