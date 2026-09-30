@@ -1,7 +1,8 @@
 import { app } from "./app.js";
 import { env } from "./config/env.js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
-import { client, db } from "./db/index.js";
+import { db } from "./db/index.js";
+import { ensureDatabaseExists } from "./db/ensure-database.js";
 import { startupState } from "./startup-state.js";
 import { buildCatalogIndex } from "./modules/catalog/catalog-index.service.js";
 
@@ -44,6 +45,8 @@ ensureDatabaseExists();
 async function start() {
     const server = app.listen(env.PORT, () => console.log(`RackChief API starting on :${env.PORT}`));
     try {
+        startupState.set("migrating", "Ensuring database exists");
+        await ensureDatabaseExists(env.DATABASE_URL);
         startupState.set("migrating", "Applying database migrations");
         console.log("Applying database migrations...");
         await migrate(db, { migrationsFolder: "./drizzle" });
@@ -53,9 +56,9 @@ async function start() {
         startupState.set("ready", "RackChief is ready");
         console.log(`RackChief API listening on :${env.PORT}.`);
     } catch (error) {
-        startupState.set("error", "RackChief startup failed");
-        console.error("RackChief startup failed: database migrations could not be applied", error instanceof Error ? error.name : "unknown");
-        server.close(() => { void client.end().catch(() => { }).finally(() => { process.exitCode = 1; }); });
+        startupState.set("error", "RackChief startup failed", error instanceof Error ? error.message : "unknown");
+        console.error("RackChief startup failed: database initialization could not be completed");
+        server.close(() => { process.exitCode = 1; });
     }
 }
 

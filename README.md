@@ -2,7 +2,9 @@
 
 RackChief is fully self-hostable. The backend builds its PostgreSQL connection URL from `PG_USER`, `PG_PASS`, `PG_HOST`, `PG_DB_NAME`, and optional `PG_PORT` (default 5432) and `PG_SSLMODE`. Set `PG_HOST=db` for the optional development Docker database, or use a reachable external host in production. Authentication is provided locally by Better Auth using email/password and HttpOnly session cookies. No Supabase project or other cloud service is required.
 
-From `Backend/`, configure the `PG_*` variables, `BETTER_AUTH_SECRET` (at least 32 random characters), and `BETTER_AUTH_URL`, then run `npm run build` and `npm start`. The backend starts a status-only listener, applies pending Drizzle migrations, then prepares the optional catalog. Poll `/startup/status` while ordinary API routes return 503. Startup closes the listener if migrations fail.
+From `Backend/`, configure `DATABASE_URL`, `BETTER_AUTH_SECRET` (at least 32 random characters), and `BETTER_AUTH_URL`, then run `npm run build` and `npm start`. The backend ensures the configured database exists and applies pending Drizzle migrations before it becomes ready; startup fails if PostgreSQL is unavailable or initialization cannot be completed.
+
+If the database in `DATABASE_URL` is missing, RackChief connects to the `postgres` maintenance database on the same server with the same credentials and SSL settings and creates it automatically. The configured role must be able to connect to `postgres` and have `CREATEDB` for this first startup. Existing databases do not require these privileges. PostgreSQL itself and the login role must already exist. The standalone `npm run db:migrate` command still requires an existing database.
 
 On a new database, `GET /api/v1/setup/status` reports whether setup is required. `POST /api/v1/setup/admin` creates the first administrator; once a user exists, further setup attempts and public registration are rejected.
 
