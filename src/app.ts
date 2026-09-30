@@ -9,6 +9,9 @@ import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 
 import { requireAuth } from "./auth/middleware.js";
+import { auth } from "./auth/auth.js";
+import { toNodeHandler } from "better-auth/node";
+import { setupRouter } from "./modules/setup/setup.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { assetRouter } from "./modules/assets/asset.routes.js";
 import { openApiDocument } from "./openapi/index.js";
@@ -22,6 +25,10 @@ export const app = express();
 
 app.use(helmet());
 app.use(cors());
+app.all("/api/auth/sign-up/email", (_req, res) => {
+    res.status(404).json({ error: "Not found" });
+});
+app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
@@ -33,6 +40,8 @@ app.get("/health", (_req, res) => {
 app.get("/openapi.json", (_req, res) => {
     res.json(openApiDocument);
 });
+
+app.use("/api/v1/setup", setupRouter);
 
 app.use(
     "/docs",

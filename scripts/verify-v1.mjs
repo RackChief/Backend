@@ -1,10 +1,10 @@
 // Opt-in development data and cross-domain API verification. Never run as a production seed.
-const token = process.env.RACKCHIEF_TEST_TOKEN;
-if (!token) throw new Error("Set RACKCHIEF_TEST_TOKEN from npm run --silent auth:token");
+const cookie = process.env.RACKCHIEF_TEST_COOKIE;
+if (!cookie) throw new Error("Set RACKCHIEF_TEST_COOKIE to a Better Auth session cookie");
 const base = process.env.RACKCHIEF_API_URL ?? "http://127.0.0.1:3000/api/v1";
 async function request(path, method = "GET", body, expected) {
     const response = await fetch(`${base}${path}`, {
-        method, headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+        method, headers: { Cookie: cookie, ...(body ? { "Content-Type": "application/json" } : {}) },
         body: body ? JSON.stringify(body) : undefined,
     });
     const data = response.status === 204 ? null : await response.json();

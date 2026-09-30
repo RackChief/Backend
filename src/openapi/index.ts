@@ -20,6 +20,7 @@ import {
 import { registerMcpAdminOpenApi } from "../modules/mcp-admin/mcp-admin.openapi.js";
 import { registerProjectOpenApi } from "../modules/projects/project.openapi.js";
 import { registerDeviceImageOpenApi } from "../modules/device-images/device-image.openapi.js";
+import { registerSetupOpenApi } from "../modules/setup/setup.openapi.js";
 
 const registry = new OpenAPIRegistry();
 
@@ -29,7 +30,7 @@ registry.registerComponent(
     {
         type: "http",
         scheme: "bearer",
-        bearerFormat: "JWT",
+        description: "RackChief MCP tokens only. Browser REST authentication uses Better Auth HttpOnly session cookies.",
     },
 );
 
@@ -62,6 +63,7 @@ registerRackOpenApi(registry);
 registerNetworkOpenApi(registry);
 registerRelationshipOpenApi(registry);
 registerDeviceImageOpenApi(registry);
+registerSetupOpenApi(registry);
 
 const generator = new OpenApiGeneratorV3(
     registry.definitions,

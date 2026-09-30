@@ -12,7 +12,7 @@ import { createConnectionSchema } from "../modules/networking/network.schema.js"
 import { projectService } from "../modules/projects/project.service.js";
 import { createProjectItemSchema, createProjectUpdateSchema,
     updateProjectItemSchema } from "../modules/projects/project.schema.js";
-import packageInfo from "../../package.json";
+import packageInfo from "../../package.json" with { type: "json" };
 
 const uuid = z.uuid();
 type ToolValue = unknown;

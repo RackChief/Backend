@@ -3,7 +3,7 @@ import { env } from "../../config/env.js";
 import type { ImageSide } from "./device-image.service.js";
 
 const lifetimeSeconds = 6 * 60 * 60;
-const key = createHmac("sha256", env.SUPABASE_SECRET_KEY).update("RackChief device images v1").digest();
+const key = createHmac("sha256", env.BETTER_AUTH_SECRET).update("RackChief device images v1").digest();
 
 function signature(assetId: string, side: ImageSide, expires: number, nonce: string) {
     return createHmac("sha256", key).update(`${assetId}:${side}:${expires}:${nonce}`).digest("hex");

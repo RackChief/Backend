@@ -43,6 +43,13 @@
       "when": 1790709099353,
       "tag": "0005_burly_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790726345055,
+      "tag": "0006_colossal_raider",
+      "breakpoints": true
     }
   ]
 }
